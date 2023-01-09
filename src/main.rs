@@ -24,7 +24,7 @@ fn main() {
 
 fn fetch_page(socket: &mut TcpStream, path: &str, host: &str) -> String {
     socket
-        .write(format!("GET {} HTTP/1.0\r\nHost: {}\r\n\r\n", path, host).as_bytes())
+        .write(format!("GET /{} HTTP/1.0\r\nHost: {}\r\n\r\n", path, host).as_bytes())
         .expect("Failed to write to socket.");
     socket
         .flush()
@@ -64,7 +64,7 @@ fn parse_url(url: &String) -> (&str, &str, &str) {
     let rest: Vec<&str> = url_vec[1].splitn(2, "/").collect();
 
     let host = rest[0];
-    let path = if rest.len() > 1 { rest[1] } else { "/" };
+    let path = if rest.len() > 1 { rest[1] } else { "" };
 
     (scheme, host, path)
 }
