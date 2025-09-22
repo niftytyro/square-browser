@@ -1,6 +1,8 @@
 #define _POSIX_C_SOURCE 200112L
 
 #include <arpa/inet.h>
+#include <errno.h>
+#include <math.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -8,8 +10,8 @@
 #include <string.h>
 #include <sys/socket.h>
 
-char *form_http_request(char *hostname, char *route, char *http_version,
-                        char *method) {
+char *form_http_request(char *hostname, char *port, char *route,
+                        char *http_version, char *method) {
   char *request;
   char *buffer;
 
@@ -17,16 +19,17 @@ char *form_http_request(char *hostname, char *route, char *http_version,
       ((strlen(method) + 1 + strlen(route) + 1 + strlen("HTTP/") +
         strlen(http_version))) +
       1; // first two 1s are for spaces and last one is for \n
-  short int headers_len =
-      strlen("Host: ") + strlen(hostname) + 2; // the 2 is for two \n
+  short int headers_len = strlen("Host: ") + strlen(hostname) + 1 +
+                          strlen(port) +
+                          2; // the 1 is for a ':' 2 is for two '\n's
 
   request = calloc(req_line_1_len + headers_len, sizeof(char));
   buffer = calloc(req_line_1_len + headers_len, sizeof(char));
 
-  sprintf(buffer, "%s %s", method, route);
+  sprintf(buffer, "%s %s HTTP/%s", method, route, http_version);
   request = strcat(request, buffer);
   request = strcat(request, "\n");
-  sprintf(buffer, "Host: %s", hostname);
+  sprintf(buffer, "Host: %s:%s", hostname, port);
   request = strcat(request, buffer);
   sprintf(request, request, hostname);
   request = strcat(request, "\n\n");
@@ -55,7 +58,7 @@ int main(int argc, char *argv[]) {
   status = getaddrinfo(argv[1], "80", &hints, &server_address);
 
   if (status != 0) {
-    fprintf(stderr, "Could not getaddressinfo(): %s\n", gai_strerror(status));
+    fprintf(stderr, "Could not getaddressinfo(): %s\n", gai_strerror(errno));
     exit(2);
   }
 
@@ -92,16 +95,49 @@ int main(int argc, char *argv[]) {
 
   printf("status: %d\n", status);
   if (status != 0) {
-    fprintf(stderr, "Failed to bind socket: %s", gai_strerror(status));
+    fprintf(stderr, "Failed to bind socket: %s", gai_strerror(errno));
   }
 
-  char *request = form_http_request(argv[1], "/index.html", "1.0", "GET");
+  char *request = form_http_request(argv[1], "80", "/index.html", "1.0", "GET");
 
+  printf("------\n");
   printf("Request:\n%s", request);
+  printf("------\n\n");
 
-  int bytes_sent = send(socket_fd, request, strlen(request), 0);
-  printf("Bytes sent: %d\n", bytes_sent);
+  unsigned long bytes_sent = send(socket_fd, request, strlen(request), 0);
+  printf("Bytes sent: %lu\n", bytes_sent);
+  printf("Request length: %lu\n", strlen(request));
+
+  if (bytes_sent == (unsigned long)-1) {
+    fprintf(stderr, "Error sending out the data: %s\n", gai_strerror(errno));
+    exit(3);
+  }
+
+  if (bytes_sent != strlen(request)) {
+    printf("ERROR: Bytes sent is less");
+  }
+
+  char *response = malloc(1024);
+
+  unsigned long bytes_received = recv(socket_fd, response, 1024, 0);
+  printf("Bytes received: %lu\n", bytes_received);
+  printf("------\n");
+  printf("Response:\n%s", response);
+  printf("------\n\n");
+
+  if (bytes_received == (unsigned long)-1) {
+    fprintf(stderr, "Error sending out the data: %s\n", gai_strerror(errno));
+    exit(3);
+  }
+
+  if (bytes_received == 0) {
+    fprintf(stderr, "Connection abruptly closed.\n");
+  }
 
   freeaddrinfo(server_address);
   return 0;
 }
+
+/* void split_url(char *url) {} */
+
+/* void connect_to_host() {} */
