@@ -15,12 +15,14 @@ char *form_http_request(char *hostname, char *port, char *route,
   char *request;
   char *buffer;
 
+  // TODO use port for localhost
+  printf("%s", port);
+
   short int req_line_1_len =
       ((strlen(method) + 1 + strlen(route) + 1 + strlen("HTTP/") +
         strlen(http_version))) +
       1; // first two 1s are for spaces and last one is for \n
-  short int headers_len = strlen("Host: ") + strlen(hostname) + 1 +
-                          strlen(port) +
+  short int headers_len = strlen("Host: ") + strlen(hostname) +
                           2; // the 1 is for a ':' 2 is for two '\n's
 
   request = calloc(req_line_1_len + headers_len, sizeof(char));
@@ -29,7 +31,7 @@ char *form_http_request(char *hostname, char *port, char *route,
   sprintf(buffer, "%s %s HTTP/%s", method, route, http_version);
   request = strcat(request, buffer);
   request = strcat(request, "\n");
-  sprintf(buffer, "Host: %s:%s", hostname, port);
+  sprintf(buffer, "Host: %s", hostname);
   request = strcat(request, buffer);
   sprintf(request, request, hostname);
   request = strcat(request, "\n\n");
@@ -118,21 +120,32 @@ int main(int argc, char *argv[]) {
   }
 
   char *response = malloc(1024);
+  unsigned long bytes_received = 0;
 
-  unsigned long bytes_received = recv(socket_fd, response, 1024, 0);
-  printf("Bytes received: %lu\n", bytes_received);
   printf("------\n");
-  printf("Response:\n%s", response);
+  printf("Response:\n");
+  int count = 0;
+  while (1) {
+
+    memset(response, 0, strlen(response));
+    int new_bytes = recv(socket_fd, response, 1024, 0);
+    bytes_received += new_bytes;
+
+    if (new_bytes == -1) {
+      fprintf(stderr, "Error sending out the data: %s\n", gai_strerror(errno));
+      exit(3);
+    } else if (new_bytes == 0) {
+      printf("\nConnection closed.\n");
+      break;
+    } else {
+      printf("%s", response);
+    }
+
+    count++;
+  }
+
   printf("------\n\n");
-
-  if (bytes_received == (unsigned long)-1) {
-    fprintf(stderr, "Error sending out the data: %s\n", gai_strerror(errno));
-    exit(3);
-  }
-
-  if (bytes_received == 0) {
-    fprintf(stderr, "Connection abruptly closed.\n");
-  }
+  printf("Bytes received: %lu\n", bytes_received);
 
   freeaddrinfo(server_address);
   return 0;
