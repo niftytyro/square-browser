@@ -8,6 +8,34 @@
 #include <string.h>
 #include <sys/socket.h>
 
+char *form_http_request(char *hostname, char *route, char *http_version,
+                        char *method) {
+  char *request;
+  char *buffer;
+
+  short int req_line_1_len =
+      ((strlen(method) + 1 + strlen(route) + 1 + strlen("HTTP/") +
+        strlen(http_version))) +
+      1; // first two 1s are for spaces and last one is for \n
+  short int headers_len =
+      strlen("Host: ") + strlen(hostname) + 2; // the 2 is for two \n
+
+  request = calloc(req_line_1_len + headers_len, sizeof(char));
+  buffer = calloc(req_line_1_len + headers_len, sizeof(char));
+
+  sprintf(buffer, "%s %s", method, route);
+  request = strcat(request, buffer);
+  request = strcat(request, "\n");
+  sprintf(buffer, "Host: %s", hostname);
+  request = strcat(request, buffer);
+  sprintf(request, request, hostname);
+  request = strcat(request, "\n\n");
+
+  free(buffer);
+
+  return request;
+}
+
 int main(int argc, char *argv[]) {
 
   struct addrinfo hints;
@@ -62,17 +90,18 @@ int main(int argc, char *argv[]) {
   status =
       connect(socket_fd, server_address->ai_addr, server_address->ai_addrlen);
 
-  printf("status: %d", status);
+  printf("status: %d\n", status);
   if (status != 0) {
     fprintf(stderr, "Failed to bind socket: %s", gai_strerror(status));
   }
 
+  char *request = form_http_request(argv[1], "/index.html", "1.0", "GET");
+
+  printf("Request:\n%s", request);
+
+  int bytes_sent = send(socket_fd, request, strlen(request), 0);
+  printf("Bytes sent: %d\n", bytes_sent);
+
   freeaddrinfo(server_address);
   return 0;
 }
-
-void split_url(char *url) {}
-
-void connect_to_host() {}
-
-char *form_http_request() { return ""; }
