@@ -10,7 +10,7 @@
 
 #define RESPONSE_READ_BUFFER_SIZE 1024 * 4
 
-void split_url(char *input, struct URL *url) {
+void make_url(char *input, struct URL *url) {
   char *scheme_delim = strstr(input, "://");
   char *port_delim;
   char *path_delim;

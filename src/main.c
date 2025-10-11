@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   struct URL url = {
       .hostname = NULL, .path = NULL, .port = NULL, .scheme = NULL};
 
-  split_url(argv[1], &url);
+  make_url(argv[1], &url);
   make_addr_from_URL(&url, &server_address);
 
   socket_fd = open_connection(server_address);
