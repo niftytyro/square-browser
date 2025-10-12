@@ -84,7 +84,6 @@ void make_addr_from_URL(struct URL *url, struct addrinfo **_server_address) {
     char buffer[INET_ADDRSTRLEN];
 
     addr = &((struct sockaddr_in *)(server_address->ai_addr))->sin_addr;
-
     inet_ntop(AF_INET, addr, buffer, INET_ADDRSTRLEN);
 
     printf("IPv4 Address: %s\n", buffer);
@@ -94,7 +93,6 @@ void make_addr_from_URL(struct URL *url, struct addrinfo **_server_address) {
     char buffer[INET6_ADDRSTRLEN];
 
     addr = &((struct sockaddr_in6 *)(server_address->ai_addr))->sin6_addr;
-
     inet_ntop(AF_INET6, addr, buffer, INET6_ADDRSTRLEN);
 
     printf("IPv6 Address: %s\n", buffer);
@@ -195,7 +193,7 @@ void read_response(int socket_fd, char **response_buffer) {
     bytes_received += new_bytes;
 
     if (new_bytes == -1) {
-      fprintf(stderr, "Error sending out the data: %s\n", gai_strerror(errno));
+      fprintf(stderr, "Error reading the data: %s\n", gai_strerror(errno));
       exit(3);
     } else if (new_bytes == 0) {
       printf("\nConnection closed.\n");
