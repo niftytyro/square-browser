@@ -13,31 +13,13 @@
 #include "./network/request.h"
 
 int main(int argc, char *argv[]) {
-  int socket_fd;
-  char *request, *response;
-  struct addrinfo *server_address;
 
   if (argc != 2) {
     printf("Usage: square <url>\n\n");
     exit(1);
   }
 
-  struct URL url = {
-      .hostname = NULL, .path = NULL, .port = NULL, .scheme = NULL};
-
-  make_url(argv[1], &url);
-  make_addr_from_URL(&url, &server_address);
-
-  socket_fd = open_connection(server_address);
-
-  request = form_http_request(&url, "GET", "1.0");
-
-  send_request(socket_fd, request);
-  read_response(socket_fd, &response);
-
-  free(request);
-  free(response);
-  freeaddrinfo(server_address);
+  fetch_response_from_url(argv[1]);
 
   return 0;
 }
