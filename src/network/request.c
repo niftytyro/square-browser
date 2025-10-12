@@ -368,7 +368,6 @@ int fetch_response_from_url(char *_url) {
     ctx = NULL, ssl = NULL, bio = NULL;
   }
 
-  // TODO solve for IPv6
   get_server_addrinfo(&url, &server_address);
   make_socket(server_address, &socket_fd);
   connect_socket(server_address, socket_fd);
